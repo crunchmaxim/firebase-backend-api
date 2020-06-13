@@ -2,7 +2,11 @@ const functions = require('firebase-functions');
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
-const firebase = require('firebase')
+const firebase = require('firebase');
+
+// validators imports
+const isEmail = require('validator/lib/isEmail');
+const isEmpty = require('validator/lib/isEmpty');
 
 const app = express();
 app.use(cors());
@@ -22,6 +26,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
+// Get all posts
 app.get('/posts', async (req, res) => {
     const posts = [];
     try {
@@ -34,10 +39,11 @@ app.get('/posts', async (req, res) => {
         });
         return res.json(posts);
     } catch (error) {
-        return res.status(500).json(error)
+        return res.status(500).json(error);
     }
 })
 
+// Get one post
 app.get('/posts/:postId', async (req, res) => {
     try {
         const snapshot = await db.doc(`/posts/${req.params.postId}`).get();
@@ -48,12 +54,13 @@ app.get('/posts/:postId', async (req, res) => {
             id: snapshot.id,
             ...snapshot.data()
         }
-        return res.json(post)
+        return res.json(post);
     } catch (error) {
-        return res.status(500).json(error)
+        return res.status(500).json(error);
     }
 })
 
+//Create new post
 app.post('/posts', async (req, res) => {
     try {
         if (req.body.body.trim() === '') {
@@ -68,10 +75,11 @@ app.post('/posts', async (req, res) => {
         return res.json('Post added');
 
     } catch (error) {
-        return res.status(500).json(error)
+        return res.status(500).json(error);
     }
 })
 
+// Sign up
 app.post('/signup', async (req, res) => {
     try {
         const newUser = {
@@ -80,11 +88,16 @@ app.post('/signup', async (req, res) => {
             confirmPassword: req.body.password,
             email: req.body.email
         }
+        // validators
+        if (isEmpty(req.body.username)) return res.json('Username must not be empty');
+        if (!isEmail(req.body.email)) return res.json('Incorrect email');
+        if (req.body.password !== req.body.confirmPassword) return res.json('Passwords must match');
+
         const doc = await db.doc(`/users/${req.body.username}`).get();
         if (doc.exists) {
             return res.status(400).json('User with this name already exists');
         } else {
-            const newUserData = await firebase.auth().createUserWithEmailAndPassword(req.body.email, req.body.username);
+            const newUserData = await firebase.auth().createUserWithEmailAndPassword(req.body.email, req.body.password);
             const token = await newUserData.user.getIdToken();
 
             newUserCredentials = {
@@ -99,7 +112,24 @@ app.post('/signup', async (req, res) => {
             return res.json({ token });
         }
     } catch (error) {
-        res.status(500).json(error)
+        return res.status(500).json(error);
+    }
+})
+
+// Login
+app.post('/login', async (req, res) => {
+    try {
+        const user = {
+            email: req.body.email,
+            password: req.body.password
+        }
+
+        const userData = await firebase.auth().signInWithEmailAndPassword(user.email, user.password);
+        const token = await userData.user.getIdToken();
+
+        return res.json({token});
+    } catch (error) {
+        return res.status(500).json("Wrong email or password");
     }
 })
 
