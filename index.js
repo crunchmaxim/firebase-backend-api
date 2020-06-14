@@ -48,7 +48,7 @@ app.get('/posts/:postId', async (req, res) => {
     try {
         const snapshot = await db.doc(`/posts/${req.params.postId}`).get();
         if (!snapshot.exists) {
-            return res.status(404).json({ error: 'Post not found' })
+            return res.status(404).json({ error: 'Post not found' });
         }
         const post = {
             id: snapshot.id,
@@ -60,14 +60,34 @@ app.get('/posts/:postId', async (req, res) => {
     }
 })
 
+// Authentication middleware
+const authMiddleware = async (req, res, next) => {
+    try {
+        if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
+            return res.status(400).json('Wrong token');
+        }
+        const token = req.headers.authorization.split('Bearer ')[1];
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        const userInfo = await db.collection('users').where('userId', '==', decodedToken.uid).limit(1).get();
+        req.userData = {};
+        req.userData.username = userInfo.docs[0].data().username;
+        next();
+
+    } catch (error) {
+        return res.status(500).json(error);
+    }
+}
+
+
+
 //Create new post
-app.post('/posts', async (req, res) => {
+app.post('/posts', authMiddleware, async (req, res) => {
     try {
         if (req.body.body.trim() === '') {
-            return res.status(400).json({ body: 'Body must not be empty' })
+            return res.status(400).json({ body: 'Body must not be empty' });
         }
         const newPost = {
-            username: req.body.username,
+            username: req.userData.username,
             body: req.body.body,
             createdAt: new Date().toISOString()
         }
@@ -127,7 +147,7 @@ app.post('/login', async (req, res) => {
         const userData = await firebase.auth().signInWithEmailAndPassword(user.email, user.password);
         const token = await userData.user.getIdToken();
 
-        return res.json({token});
+        return res.json({ token });
     } catch (error) {
         return res.status(500).json("Wrong email or password");
     }
