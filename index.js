@@ -4,6 +4,12 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const firebase = require('firebase');
 
+// Upload image imports
+const Busboy = require('busboy');
+const path = require('path');
+const os = require('os');
+const fs = require('fs');
+
 // validators imports
 const isEmail = require('validator/lib/isEmail');
 const isEmpty = require('validator/lib/isEmpty');
@@ -60,7 +66,7 @@ app.get('/posts/:postId', async (req, res) => {
     }
 })
 
-// Authentication middleware
+// Auth middleware
 const authMiddleware = async (req, res, next) => {
     try {
         if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
@@ -124,7 +130,8 @@ app.post('/signup', async (req, res) => {
                 username: req.body.username,
                 email: req.body.email,
                 createdAt: new Date().toISOString(),
-                userId: newUserData.user.uid
+                userId: newUserData.user.uid,
+                imageUrl: 'https://firebasestorage.googleapis.com/v0/b/socialapp2-f9053.appspot.com/o/no-img.png?alt=media'
             }
 
             await db.doc(`/users/${req.body.username}`).set(newUserCredentials)
@@ -151,6 +158,50 @@ app.post('/login', async (req, res) => {
     } catch (error) {
         return res.status(500).json("Wrong email or password");
     }
+})
+
+// Upload user image
+app.post('/users/image', authMiddleware, (req, res) => {
+    const busboy = new Busboy({ headers: req.headers });
+
+    let imageFileName;
+    let imageToBeUploaded = {};
+
+    busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+        if (mimetype !== 'image/jpeg' && mimetype !== 'image/png') {
+            return res.status(400).json({ error: 'Wrong file type submitted' });
+        }
+
+        const imageExtension = filename.split('.')[filename.split('.').length - 1];
+        imageFileName = `${Math.round(Math.random() * 10000000000)}.${imageExtension}`;
+
+        const filepath = path.join(os.tmpdir(), imageFileName)
+
+        imageToBeUploaded = { filepath, mimetype };
+
+        file.pipe(fs.createWriteStream(filepath));
+    });
+    busboy.on('finish', async () => {
+        try {
+            await admin.storage().bucket().upload(imageToBeUploaded.filepath, {
+                resumable: false,
+                metadata: {
+                    metadata: {
+                        contentType: imageToBeUploaded.mimetype
+                    }
+                }
+            })
+
+            const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseConfig.storageBucket}/o/${imageFileName}?alt=media`;
+
+            await db.doc(`/users/${req.userData.username}`).update({ imageUrl });
+
+            return res.json('Image upload successfully');
+        } catch (error) {
+            return res.status(500).json(error)
+        }
+    })
+    busboy.end(req.rawBody);
 })
 
 exports.api = functions.region('europe-west1').https.onRequest(app);
