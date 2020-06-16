@@ -140,5 +140,24 @@ exports.getUserInfo = async (req, res) => {
     } catch (error) {
         return res.status(500).json(error);
     }
+};
 
-}
+exports.setAboutMe = async (req, res) => {
+    if (isEmpty(req.body.aboutMe)) {
+        return res.status(400).json('Must not be empty');
+    }
+    const aboutMe = req.body.aboutMe;
+
+    await db.doc(`/users/${req.userData.username}`).update({aboutMe});
+    return res.json('About me updated');
+};
+
+exports.setStatus = async (req, res) => {
+    if (isEmpty(req.body.status)) {
+        return res.status(400).json('Must not be empty');
+    }
+    const status = req.body.status;
+
+    await db.doc(`/users/${req.userData.username}`).update({status});
+    return res.json('Status updated');
+};
