@@ -67,7 +67,7 @@ exports.postComment = async (req, res) => {
     } catch (error) {
         return res.status(500).json(error);
     }
-}
+};
 
 exports.deletePost = async (req, res) => {
     try {
@@ -79,7 +79,7 @@ exports.deletePost = async (req, res) => {
         const post = postSnapshot.data();
      
         if (post.username !== req.userData.username) {
-            return res.status(400).json('Wrong credentials')
+            return res.status(400).json('Wrong credentials');
         }
      
         await db.doc(`/posts/${req.params.postId}`).delete();
@@ -87,9 +87,44 @@ exports.deletePost = async (req, res) => {
     } catch (error) {
         return res.status(500).json(error);
     }
+};
 
+exports.likePost = async (req, res) => {
+    try {
+        const post = await db.doc(`/posts/${req.params.postId}`).get();
+        if (!post.exists) {
+            return res.status(404).json('Post not found');
+        }
 
+        const likeSnapshot = await db.collection('likes').where('username', '==', req.userData.username).where('postId', '==', req.params.postId).get();
 
+        if (likeSnapshot.docs[0] !== undefined) {
+            return res.json('You already liked this post');
+        }
+    
+        const likeDocument = {
+            username: req.userData.username,
+            postId: req.params.postId
+        }
+    
+        await db.collection('likes').add(likeDocument);
+        return res.json('Like added');
+    } catch (error) {
+        return res.status(500).json(error);
+    }
+};
 
+exports.unlikePost = async (req, res) => {
+    try {
+        const likeDocument = await db.collection('likes').where('username', '==', req.userData.username).where('postId', '==', req.params.postId).get();
 
-}
+        if (likeDocument.docs[0] === undefined) {
+            return res.json('Like not found');
+        }
+    
+        await db.doc(`/likes/${likeDocument.docs[0].id}`).delete()
+        return res.json('Like deleted');
+    } catch (error) {
+        return res.status(500).json(error);
+    }
+};
