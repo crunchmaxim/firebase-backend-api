@@ -68,3 +68,28 @@ exports.postComment = async (req, res) => {
         return res.status(500).json(error);
     }
 }
+
+exports.deletePost = async (req, res) => {
+    try {
+        const postSnapshot = await db.doc(`/posts/${req.params.postId}`).get();
+        if (!postSnapshot.exists) {
+            return res.status(404).json('Post not found');
+        }
+     
+        const post = postSnapshot.data();
+     
+        if (post.username !== req.userData.username) {
+            return res.status(400).json('Wrong credentials')
+        }
+     
+        await db.doc(`/posts/${req.params.postId}`).delete();
+        return res.json('Post was deleted');
+    } catch (error) {
+        return res.status(500).json(error);
+    }
+
+
+
+
+
+}
