@@ -49,7 +49,9 @@ exports.signUp = async (req, res) => {
                 email: req.body.email,
                 createdAt: new Date().toISOString(),
                 userId: newUserData.user.uid,
-                imageUrl: 'https://firebasestorage.googleapis.com/v0/b/socialapp2-f9053.appspot.com/o/no-img.png?alt=media'
+                imageUrl: 'https://firebasestorage.googleapis.com/v0/b/socialapp2-f9053.appspot.com/o/no-img.png?alt=media',
+                aboutMe: '',
+                status: ''
             }
 
             await db.doc(`/users/${req.body.username}`).set(newUserCredentials)
@@ -119,3 +121,24 @@ exports.uploadUserImage = (req, res) => {
     })
     busboy.end(req.rawBody);
 };
+
+exports.getUserInfo = async (req, res) => {
+    try {
+        const userInfo = {};
+
+        const userData = await db.doc(`/users/${req.params.username}`).get();
+        if (!userData.exists) {
+            return res.status(404).json('User not found');
+        }
+        userInfo.details = userData.data();
+        userInfo.posts = [];
+
+        const userPosts = await db.collection('posts').where('username', '==', req.params.username).orderBy('createdAt', 'desc').get();
+        userPosts.forEach(post => userInfo.posts.push(post.data()));
+
+        return res.json(userInfo);
+    } catch (error) {
+        return res.status(500).json(error);
+    }
+
+}
