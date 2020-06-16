@@ -4,7 +4,7 @@ const db = admin.firestore();
 exports.getAllPosts = async (req, res) => {
     const posts = [];
     try {
-        const snapshot = await db.collection('posts').orderBy('createdAt', 'desc').get()
+        const snapshot = await db.collection('posts').orderBy('createdAt', 'desc').get();
         snapshot.forEach(doc => {
             let id = doc.id;
             let data = doc.data();
@@ -27,6 +27,9 @@ exports.getOnePost = async (req, res) => {
             id: snapshot.id,
             ...snapshot.data()
         }
+        post.comments = [];
+        const commentsSnapshot = await db.collection('comments').where('postId', '==', post.id).get();
+        commentsSnapshot.forEach(comment => post.comments.push(comment.data()));
         return res.json(post);
     } catch (error) {
         return res.status(500).json(error);
@@ -50,3 +53,18 @@ exports.createNewPost = async (req, res) => {
         return res.status(500).json(error);
     }
 };
+
+exports.postComment = async (req, res) => {
+    try {
+        const newComment = {
+            username: req.userData.username,
+            body: req.body.body,
+            postId: req.params.postId
+        }
+
+        await db.collection('comments').add(newComment);
+        return res.json('Comment added');
+    } catch (error) {
+        return res.status(500).json(error);
+    }
+}
