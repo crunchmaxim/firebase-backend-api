@@ -131,12 +131,22 @@ exports.getUserInfo = async (req, res) => {
             return res.status(404).json('User not found');
         }
         userInfo.details = userData.data();
-        userInfo.posts = [];
 
+        userInfo.posts = [];
         const userPosts = await db.collection('posts').where('username', '==', req.params.username).orderBy('createdAt', 'desc').get();
         userPosts.forEach(post => userInfo.posts.push(post.data()));
-
         return res.json(userInfo);
+    } catch (error) {
+        return res.status(500).json(error);
+    }
+};
+
+exports.getNotifications = async (req, res) => {
+    try {
+        const notifications = [];
+        const userNotifications = await db.collection('notifications').where('recipient', '==', req.userData.username).orderBy('createdAt', 'desc').get();
+        userNotifications.forEach(notification => notifications.push(notification.data()));
+    return res.json(notifications);
     } catch (error) {
         return res.status(500).json(error);
     }
