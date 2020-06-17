@@ -8,13 +8,14 @@ const app = express();
 app.use(cors());
 
 admin.initializeApp();
+const db = admin.firestore();
 
 // Auth middleware import
-const {authMiddleware} = require('./util/authmiddleware');
+const { authMiddleware } = require('./util/authmiddleware');
 
 // Handlers imports
-const {getAllPosts, getOnePost, createNewPost, postComment, deletePost, likePost, unlikePost} = require('./handlers/posts');
-const {signUp, login, uploadUserImage, getUserInfo, setAboutMe, setStatus} = require('./handlers/users');
+const { getAllPosts, getOnePost, createNewPost, postComment, deletePost, likePost, unlikePost } = require('./handlers/posts');
+const { signUp, login, uploadUserImage, getUserInfo, setAboutMe, setStatus } = require('./handlers/users');
 
 // Posts routes
 app.get('/posts', getAllPosts); // Get all posts
@@ -29,8 +30,45 @@ app.get('/posts/:postId/unlike', authMiddleware, unlikePost); // Unlike a post
 app.post('/signup', signUp); // Sign up
 app.post('/login', login); // Login
 app.post('/users/image', authMiddleware, uploadUserImage); // Upload user image
-app.get('/users/:username', getUserInfo ); // Get user info
+app.get('/users/:username', getUserInfo); // Get user info
 app.post('/users/aboutme', authMiddleware, setAboutMe); // Set about me
 app.post('/users/status', authMiddleware, setStatus); // Set status
 
 exports.api = functions.region('europe-west1').https.onRequest(app);
+
+// Notifications
+exports.createNotificationOnLike = functions.region('europe-west1').firestore.document('likes/{id}')
+    .onCreate(async likeSnapshot => {
+        const postSnapshot = await db.doc(`/posts/${likeSnapshot.data().postId}`).get();
+
+        const newLikeNotification = {
+            sender: likeSnapshot.data().username,
+            recipient: postSnapshot.data().username,
+            type: 'like',
+            read: false,
+            createdAt: new Date().toISOString()
+        }
+        await db.doc(`/notifications/${likeSnapshot.id}`).set(newLikeNotification);
+        return;
+    })
+
+exports.deleteNotificationOnUnlike = functions.region('europe-west1').firestore.document('likes/{id}')
+    .onDelete(async likeSnapshot => {
+        await db.doc(`/notifications/${likeSnapshot.id}`).delete();
+        return;
+    })
+
+exports.createNotificationOnComment = functions.region('europe-west1').firestore.document('comments/{id}')
+    .onCreate(async commentSnapshot => {
+        const postSnapshot = await db.doc(`/posts/${commentSnapshot.data().postId}`).get();
+
+        const newCommentNotification = {
+            sender: commentSnapshot.data().username,
+            recipient: postSnapshot.data().username,
+            type: 'comment',
+            read: false,
+            createdAt: new Date().toISOString()
+        }
+        await db.doc(`/notifications/${commentSnapshot.id}`).set(newCommentNotification);
+        return;
+    })
