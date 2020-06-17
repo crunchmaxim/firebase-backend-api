@@ -152,6 +152,25 @@ exports.getNotifications = async (req, res) => {
     }
 };
 
+exports.deleteNotification = async (req, res) => {
+    try {
+        const notificationSnapshot = await db.doc(`/notifications/${req.params.notificationId}`).get();
+
+        if (!notificationSnapshot.exists) {
+            return res.status(404).json('Notification not found');
+        }
+    
+        if (notificationSnapshot.data().recipient !== req.userData.username) {
+            return res.status(400).json('Wrong credentials')
+        }
+    
+        await db.doc(`/notifications/${req.params.notificationId}`).delete();
+        return res.json('Notification deleted');
+    } catch (error) {
+        return res.status(500).json(error);
+    }
+};
+
 exports.setAboutMe = async (req, res) => {
     if (isEmpty(req.body.aboutMe)) {
         return res.status(400).json('Must not be empty');

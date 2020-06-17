@@ -15,7 +15,7 @@ const { authMiddleware } = require('./util/authmiddleware');
 
 // Handlers imports
 const { getAllPosts, getOnePost, createNewPost, postComment, deletePost, likePost, unlikePost } = require('./handlers/posts');
-const { signUp, login, uploadUserImage, getUserInfo, setAboutMe, setStatus, getNotifications } = require('./handlers/users');
+const { signUp, login, uploadUserImage, getUserInfo, setAboutMe, setStatus, getNotifications, deleteNotification } = require('./handlers/users');
 
 // Posts routes
 app.get('/posts', getAllPosts); // Get all posts
@@ -33,7 +33,8 @@ app.post('/users/image', authMiddleware, uploadUserImage); // Upload user image
 app.get('/users/:username', getUserInfo); // Get user info
 app.post('/users/aboutme', authMiddleware, setAboutMe); // Set about me
 app.post('/users/status', authMiddleware, setStatus); // Set status
-app.get('/notifications', authMiddleware, getNotifications) // Get notifications
+app.get('/notifications', authMiddleware, getNotifications); // Get notifications
+app.delete('/notifications/:notificationId', authMiddleware, deleteNotification); // Delete notification
 
 exports.api = functions.region('europe-west1').https.onRequest(app);
 
@@ -50,6 +51,10 @@ exports.createNotificationOnLike = functions.region('europe-west1').firestore.do
             createdAt: new Date().toISOString(),
             postId: postSnapshot.id
         }
+        if (newLikeNotification.sender === newLikeNotification.recipient) {
+            return;
+        }
+
         await db.doc(`/notifications/${likeSnapshot.id}`).set(newLikeNotification);
         return;
     })
@@ -72,6 +77,10 @@ exports.createNotificationOnComment = functions.region('europe-west1').firestore
             createdAt: new Date().toISOString(),
             postId: postSnapshot.id
         }
+        if (newCommentNotification.sender === newCommentNotification.recipient) {
+            return;
+        }
+
         await db.doc(`/notifications/${commentSnapshot.id}`).set(newCommentNotification);
         return;
     })
