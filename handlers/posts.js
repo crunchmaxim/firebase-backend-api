@@ -30,6 +30,10 @@ exports.getOnePost = async (req, res) => {
         post.comments = [];
         const commentsSnapshot = await db.collection('comments').where('postId', '==', post.id).get();
         commentsSnapshot.forEach(comment => post.comments.push(comment.data()));
+
+        post.likes = [];
+        const likesSnapshot = await db.collection('likes').where('postId', '==', post.id).get();
+        likesSnapshot.forEach(like => post.likes.push(like.data()));
         return res.json(post);
     } catch (error) {
         return res.status(500).json(error);

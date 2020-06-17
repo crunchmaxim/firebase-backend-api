@@ -46,7 +46,8 @@ exports.createNotificationOnLike = functions.region('europe-west1').firestore.do
             recipient: postSnapshot.data().username,
             type: 'like',
             read: false,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            postId: postSnapshot.id
         }
         await db.doc(`/notifications/${likeSnapshot.id}`).set(newLikeNotification);
         return;
@@ -67,7 +68,8 @@ exports.createNotificationOnComment = functions.region('europe-west1').firestore
             recipient: postSnapshot.data().username,
             type: 'comment',
             read: false,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            postId: postSnapshot.id
         }
         await db.doc(`/notifications/${commentSnapshot.id}`).set(newCommentNotification);
         return;
