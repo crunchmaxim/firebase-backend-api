@@ -141,17 +141,6 @@ exports.getUserInfo = async (req, res) => {
     }
 };
 
-exports.getNotifications = async (req, res) => {
-    try {
-        const notifications = [];
-        const userNotifications = await db.collection('notifications').where('recipient', '==', req.userData.username).orderBy('createdAt', 'desc').get();
-        userNotifications.forEach(notification => notifications.push(notification.data()));
-    return res.json(notifications);
-    } catch (error) {
-        return res.status(500).json(error);
-    }
-};
-
 exports.deleteNotification = async (req, res) => {
     try {
         const notificationSnapshot = await db.doc(`/notifications/${req.params.notificationId}`).get();
@@ -159,11 +148,11 @@ exports.deleteNotification = async (req, res) => {
         if (!notificationSnapshot.exists) {
             return res.status(404).json('Notification not found');
         }
-    
+
         if (notificationSnapshot.data().recipient !== req.userData.username) {
             return res.status(400).json('Wrong credentials')
         }
-    
+
         await db.doc(`/notifications/${req.params.notificationId}`).delete();
         return res.json('Notification deleted');
     } catch (error) {
@@ -172,21 +161,53 @@ exports.deleteNotification = async (req, res) => {
 };
 
 exports.setAboutMe = async (req, res) => {
-    if (isEmpty(req.body.aboutMe)) {
-        return res.status(400).json('Must not be empty');
-    }
-    const aboutMe = req.body.aboutMe;
+    try {
+        if (isEmpty(req.body.aboutMe)) {
+            return res.status(400).json('Must not be empty');
+        }
+        const aboutMe = req.body.aboutMe;
 
-    await db.doc(`/users/${req.userData.username}`).update({aboutMe});
-    return res.json('About me updated');
+        await db.doc(`/users/${req.userData.username}`).update({ aboutMe });
+        return res.json('About me updated');
+    } catch (error) {
+        return res.status(500).json(error);
+    }
+
 };
 
 exports.setStatus = async (req, res) => {
-    if (isEmpty(req.body.status)) {
-        return res.status(400).json('Must not be empty');
-    }
-    const status = req.body.status;
+    try {
+        if (isEmpty(req.body.status)) {
+            return res.status(400).json('Must not be empty');
+        }
+        const status = req.body.status;
 
-    await db.doc(`/users/${req.userData.username}`).update({status});
-    return res.json('Status updated');
+        await db.doc(`/users/${req.userData.username}`).update({ status });
+        return res.json('Status updated');
+    } catch (error) {
+        return res.status(500).json(error);
+    }
+};
+
+exports.getAuthUserInfo = async (req, res) => {
+    try {
+        const userInfo = {};
+        const userData = await db.doc(`/users/${req.userData.username}`).get();
+        if (!userData.exists) {
+            return res.status(404).json('User not found');
+        }
+        userInfo.details = userData.data();
+
+        userInfo.posts = [];
+        const userPosts = await db.collection('posts').where('username', '==', req.userData.username).orderBy('createdAt', 'desc').get();
+        userPosts.forEach(post => userInfo.posts.push(post.data()));
+
+        userInfo.notifications = [];
+        const userNotifications = await db.collection('notifications').where('recipient', '==', req.userData.username).orderBy('createdAt', 'desc').get();
+        userNotifications.forEach(notification => userInfo.notifications.push(notification.data()));
+
+        return res.json(userInfo);
+    } catch (error) {
+        return res.status(500).json(error);
+    }
 };
