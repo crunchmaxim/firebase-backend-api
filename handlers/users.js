@@ -33,9 +33,9 @@ exports.signUp = async (req, res) => {
             email: req.body.email
         }
         // validators
-        if (isEmpty(req.body.username)) return res.json('Username must not be empty');
-        if (!isEmail(req.body.email)) return res.json('Incorrect email');
-        if (req.body.password !== req.body.confirmPassword) return res.json('Passwords must match');
+        if (isEmpty(req.body.username)) return res.status(400).json('Username must not be empty');
+        if (!isEmail(req.body.email)) return res.status(400).json('Incorrect email');
+        if (req.body.password !== req.body.confirmPassword) return res.status(400).json("Passwords must match");
 
         const doc = await db.doc(`/users/${req.body.username}`).get();
         if (doc.exists) {
@@ -54,7 +54,7 @@ exports.signUp = async (req, res) => {
                 status: ''
             }
 
-            await db.doc(`/users/${req.body.username}`).set(newUserCredentials)
+            await db.doc(`/users/${req.body.username}`).set(newUserCredentials);
 
             return res.json({ token });
         }
@@ -75,7 +75,7 @@ exports.login = async (req, res) => {
 
         return res.json({ token });
     } catch (error) {
-        return res.status(500).json("Wrong email or password");
+        return res.status(400).json("Wrong email or password");
     }
 };
 

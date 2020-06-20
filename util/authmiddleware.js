@@ -11,6 +11,7 @@ exports.authMiddleware = async (req, res, next) => {
         const userInfo = await db.collection('users').where('userId', '==', decodedToken.uid).limit(1).get();
         req.userData = {};
         req.userData.username = userInfo.docs[0].data().username;
+        req.userData.imageUrl = userInfo.docs[0].data().imageUrl;
         next();
 
     } catch (error) {

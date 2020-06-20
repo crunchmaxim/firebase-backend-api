@@ -98,3 +98,14 @@ exports.onPostDelete = functions.region('europe-west1').firestore.document('post
         });
         return;
     });
+
+exports.onChangeUserImage = functions.region('europe-west1').firestore.document('users/{id}')
+    .onUpdate(async change => {
+        if (change.before.data().imageUrl !== change.after.data().imageUrl) {
+            const postsSnapshot = await db.collection('posts').where('username', '==', change.before.data().username).get();
+            postsSnapshot.forEach(async post => {
+                await db.doc(`/posts/${post.id}`).update({imageUrl: change.after.data().imageUrl});
+                return;
+            })
+        }
+    });

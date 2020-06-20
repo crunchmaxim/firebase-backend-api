@@ -5,10 +5,9 @@ exports.getAllPosts = async (req, res) => {
     const posts = [];
     try {
         const snapshot = await db.collection('posts').orderBy('createdAt', 'desc').get();
-        snapshot.forEach(doc => {
+        snapshot.forEach(async doc => {
             let id = doc.id;
             let data = doc.data();
-
             posts.push({ id, ...data })
         });
         return res.json(posts);
@@ -48,7 +47,8 @@ exports.createNewPost = async (req, res) => {
         const newPost = {
             username: req.userData.username,
             body: req.body.body,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            imageUrl: req.userData.imageUrl
         }
         await db.collection('posts').add(newPost);
         return res.json('Post added');
