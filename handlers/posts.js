@@ -48,7 +48,8 @@ exports.createNewPost = async (req, res) => {
             username: req.userData.username,
             body: req.body.body,
             createdAt: new Date().toISOString(),
-            imageUrl: req.userData.imageUrl
+            imageUrl: req.userData.imageUrl,
+            title: req.body.title
         }
         await db.collection('posts').add(newPost);
         return res.json('Post added');
