@@ -162,9 +162,6 @@ exports.deleteNotification = async (req, res) => {
 
 exports.setAboutMe = async (req, res) => {
     try {
-        if (isEmpty(req.body.aboutMe)) {
-            return res.status(400).json('Must not be empty');
-        }
         const aboutMe = req.body.aboutMe;
 
         await db.doc(`/users/${req.userData.username}`).update({ aboutMe });
@@ -177,9 +174,6 @@ exports.setAboutMe = async (req, res) => {
 
 exports.setStatus = async (req, res) => {
     try {
-        if (isEmpty(req.body.status)) {
-            return res.status(400).json('Must not be empty');
-        }
         const status = req.body.status;
 
         await db.doc(`/users/${req.userData.username}`).update({ status });
@@ -205,6 +199,14 @@ exports.getAuthUserInfo = async (req, res) => {
         userInfo.notifications = [];
         const userNotifications = await db.collection('notifications').where('recipient', '==', req.userData.username).orderBy('createdAt', 'desc').get();
         userNotifications.forEach(notification => userInfo.notifications.push(notification.data()));
+
+        userInfo.likes = [];
+        const userLikes = await db.collection('likes').where('username', '==', req.userData.username).get();
+        userLikes.forEach(like => userInfo.likes.push(like.data()));
+
+        userInfo.comments = [];
+        const userComments = await db.collection('comments').where('username', '==', req.userData.username).orderBy('createdAt', 'desc').get();
+        userComments.forEach(comment => userInfo.comments.push(comment.data()));
 
         return res.json(userInfo);
     } catch (error) {
