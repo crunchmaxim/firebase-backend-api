@@ -49,7 +49,9 @@ exports.createNewPost = async (req, res) => {
             body: req.body.body,
             createdAt: new Date().toISOString(),
             imageUrl: req.userData.imageUrl,
-            title: req.body.title
+            title: req.body.title,
+            likesCount: 0,
+            commentsCount: 0
         }
         await db.collection('posts').add(newPost);
         return res.json('Post added');
@@ -114,6 +116,7 @@ exports.likePost = async (req, res) => {
         }
     
         await db.collection('likes').add(likeDocument);
+        await db.doc(`/posts/${req.params.postId}`).update({likesCount: (post.data().likesCount+1)});
         return res.json('Like added');
     } catch (error) {
         return res.status(500).json(error);
@@ -128,7 +131,9 @@ exports.unlikePost = async (req, res) => {
             return res.json('Like not found');
         }
     
-        await db.doc(`/likes/${likeDocument.docs[0].id}`).delete()
+        await db.doc(`/likes/${likeDocument.docs[0].id}`).delete();
+        const post = await db.doc(`/posts/${req.params.postId}`).get();
+        await db.doc(`/posts/${req.params.postId}`).update({likesCount: (post.data().likesCount-1)});
         return res.json('Like deleted');
     } catch (error) {
         return res.status(500).json(error);
