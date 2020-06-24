@@ -67,7 +67,8 @@ exports.postComment = async (req, res) => {
             username: req.userData.username,
             body: req.body.body,
             postId: req.params.postId,
-            createdAt: new Date().toISOString() 
+            createdAt: new Date().toISOString(),
+            imageUrl: req.userData.imageUrl
         }
 
         await db.collection('comments').add(newComment);

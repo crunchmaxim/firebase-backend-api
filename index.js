@@ -108,5 +108,10 @@ exports.onChangeUserImage = functions.region('europe-west1').firestore.document(
                 await db.doc(`/posts/${post.id}`).update({imageUrl: change.after.data().imageUrl});
                 return;
             })
+            const commentsSnapshot = await db.collection('comments').where('username', '==', change.before.data().username).get();
+            commentsSnapshot.forEach(async comment => {
+                await db.doc(`/comments/${comment.id}`).update({imageUrl: change.after.data().imageUrl});
+                return;
+            })
         }
     });
