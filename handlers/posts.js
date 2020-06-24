@@ -71,6 +71,8 @@ exports.postComment = async (req, res) => {
         }
 
         await db.collection('comments').add(newComment);
+        const post = await db.doc(`/posts/${req.params.postId}`).get();
+        await db.doc(`/posts/${req.params.postId}`).update({commentsCount: (post.data().commentsCount+1)});
         return res.json('Comment added');
     } catch (error) {
         return res.status(500).json(error);
@@ -135,6 +137,22 @@ exports.unlikePost = async (req, res) => {
         const post = await db.doc(`/posts/${req.params.postId}`).get();
         await db.doc(`/posts/${req.params.postId}`).update({likesCount: (post.data().likesCount-1)});
         return res.json('Like deleted');
+    } catch (error) {
+        return res.status(500).json(error);
+    }
+};
+
+exports.getPostComments = async (req, res) => {
+    try {
+        const post = await db.doc(`/posts/${req.params.postId}`).get();
+        if (!post.exists) {
+            return res.status(404).json('Post not found');
+        }
+
+        const postComments = [];
+        const commentsSnapshot = await db.collection('comments').where('postId', '==', req.params.postId).orderBy('createdAt', 'desc').get();
+        commentsSnapshot.forEach(comment => postComments.push(comment.data()));
+        return res.json(postComments);
     } catch (error) {
         return res.status(500).json(error);
     }
