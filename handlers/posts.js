@@ -152,9 +152,28 @@ exports.getPostComments = async (req, res) => {
 
         const postComments = [];
         const commentsSnapshot = await db.collection('comments').where('postId', '==', req.params.postId).orderBy('createdAt', 'asc').get();
-        commentsSnapshot.forEach(comment => postComments.push(comment.data()));
+        commentsSnapshot.forEach(comment => postComments.push({...comment.data(), id: comment.id}));
         return res.json(postComments);
     } catch (error) {
         return res.status(500).json(error);
     }
 };
+
+exports.deleteComment = async (req, res) => {
+    try {
+        const comment = await db.doc(`/comments/${req.params.commentId}`).get();
+
+        if (!comment.exists) {
+            return res.status(404).json('Comment not found');
+        }
+
+        if (req.userData.username !== comment.data().username) {
+            return res.status(400).json('Wrong credentials');
+        }
+
+        await db.doc(`/comments/${req.params.commentId}`).delete();
+        return res.json('Comment deleted');
+    } catch (error) {
+        return res.status(500).json(error);
+    }
+}

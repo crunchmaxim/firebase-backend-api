@@ -14,7 +14,7 @@ const db = admin.firestore();
 const { authMiddleware } = require('./util/authmiddleware');
 
 // Handlers imports
-const { getAllPosts, getOnePost, createNewPost, postComment, deletePost, likePost, unlikePost, getPostComments } = require('./handlers/posts');
+const { getAllPosts, getOnePost, createNewPost, postComment, deletePost, likePost, unlikePost, getPostComments, deleteComment } = require('./handlers/posts');
 const { signUp, login, uploadUserImage, getUserInfo, setAboutMe, setStatus, deleteNotification, getAuthUserInfo } = require('./handlers/users');
 
 // Posts routes
@@ -26,6 +26,7 @@ app.delete('/posts/:postId', authMiddleware, deletePost); // Delete post
 app.get('/posts/:postId/like', authMiddleware, likePost); // Like a post
 app.get('/posts/:postId/unlike', authMiddleware, unlikePost); // Unlike a post
 app.get('/posts/:postId/comments', getPostComments); // Get comments for a post
+app.delete('/comments/:commentId', authMiddleware, deleteComment); // Delete comment
 
 // Users routes
 app.post('/signup', signUp); // Sign up
