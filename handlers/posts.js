@@ -151,7 +151,7 @@ exports.getPostComments = async (req, res) => {
         }
 
         const postComments = [];
-        const commentsSnapshot = await db.collection('comments').where('postId', '==', req.params.postId).orderBy('createdAt', 'desc').get();
+        const commentsSnapshot = await db.collection('comments').where('postId', '==', req.params.postId).orderBy('createdAt', 'asc').get();
         commentsSnapshot.forEach(comment => postComments.push(comment.data()));
         return res.json(postComments);
     } catch (error) {
