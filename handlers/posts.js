@@ -162,6 +162,7 @@ exports.getPostComments = async (req, res) => {
 exports.deleteComment = async (req, res) => {
     try {
         const comment = await db.doc(`/comments/${req.params.commentId}`).get();
+        const postId = comment.data().postId;
 
         if (!comment.exists) {
             return res.status(404).json('Comment not found');
@@ -172,6 +173,10 @@ exports.deleteComment = async (req, res) => {
         }
 
         await db.doc(`/comments/${req.params.commentId}`).delete();
+
+        const post = await db.doc(`/posts/${postId}`).get();
+        await db.doc(`/posts/${postId}`).update({commentsCount: (post.data().commentsCount-1)});
+
         return res.json('Comment deleted');
     } catch (error) {
         return res.status(500).json(error);
