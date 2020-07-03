@@ -115,6 +115,7 @@ exports.likePost = async (req, res) => {
     
         const likeDocument = {
             username: req.userData.username,
+            imageUrl: req.userData.imageUrl,
             postId: req.params.postId
         }
     

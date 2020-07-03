@@ -47,7 +47,9 @@ exports.createNotificationOnLike = functions.region('europe-west1').firestore.do
 
         const newLikeNotification = {
             sender: likeSnapshot.data().username,
+            senderImage: likeSnapshot.data().imageUrl,
             recipient: postSnapshot.data().username,
+            postTitle: postSnapshot.data().title,
             type: 'like',
             read: false,
             createdAt: new Date().toISOString(),
@@ -73,9 +75,10 @@ exports.createNotificationOnComment = functions.region('europe-west1').firestore
 
         const newCommentNotification = {
             sender: commentSnapshot.data().username,
+            senderImage: commentSnapshot.data().imageUrl,
             recipient: postSnapshot.data().username,
+            postTitle: postSnapshot.data().title,
             type: 'comment',
-            read: false,
             createdAt: new Date().toISOString(),
             postId: postSnapshot.id
         }
@@ -84,6 +87,12 @@ exports.createNotificationOnComment = functions.region('europe-west1').firestore
         }
 
         await db.doc(`/notifications/${commentSnapshot.id}`).set(newCommentNotification);
+        return;
+    });
+
+exports.deleteNotificationOnCommentDelete = functions.region('europe-west1').firestore.document('comments/{id}')
+    .onDelete(async commentSnapshot => {
+        await db.doc(`/notifications/${commentSnapshot.id}`).delete();
         return;
     });
 
