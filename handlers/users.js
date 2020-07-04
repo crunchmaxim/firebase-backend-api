@@ -198,7 +198,7 @@ exports.getAuthUserInfo = async (req, res) => {
 
         userInfo.notifications = [];
         const userNotifications = await db.collection('notifications').where('recipient', '==', req.userData.username).orderBy('createdAt', 'desc').get();
-        userNotifications.forEach(notification => userInfo.notifications.push(notification.data()));
+        userNotifications.forEach(notification => userInfo.notifications.push({...notification.data(), id: notification.id}));
 
         userInfo.likes = [];
         const userLikes = await db.collection('likes').where('username', '==', req.userData.username).get();
