@@ -160,29 +160,6 @@ exports.deleteNotification = async (req, res) => {
     }
 };
 
-exports.setAboutMe = async (req, res) => {
-    try {
-        const aboutMe = req.body.aboutMe;
-
-        await db.doc(`/users/${req.userData.username}`).update({ aboutMe });
-        return res.json('About me updated');
-    } catch (error) {
-        return res.status(500).json(error);
-    }
-
-};
-
-exports.setStatus = async (req, res) => {
-    try {
-        const status = req.body.status;
-
-        await db.doc(`/users/${req.userData.username}`).update({ status });
-        return res.json('Status updated');
-    } catch (error) {
-        return res.status(500).json(error);
-    }
-};
-
 exports.getAuthUserInfo = async (req, res) => {
     try {
         const userInfo = {};

@@ -15,7 +15,7 @@ const { authMiddleware } = require('./util/authmiddleware');
 
 // Handlers imports
 const { getAllPosts, getOnePost, createNewPost, postComment, deletePost, likePost, unlikePost, getPostComments, deleteComment, addPostImage } = require('./handlers/posts');
-const { signUp, login, uploadUserImage, getUserInfo, setAboutMe, setStatus, deleteNotification, getAuthUserInfo } = require('./handlers/users');
+const { signUp, login, uploadUserImage, getUserInfo, deleteNotification, getAuthUserInfo } = require('./handlers/users');
 
 // Posts routes
 app.get('/posts', getAllPosts); // Get all posts
@@ -35,8 +35,6 @@ app.post('/login', login); // Login
 app.post('/users/image', authMiddleware, uploadUserImage); // Upload user image
 app.get('/users/:username', getUserInfo); // Get user info
 app.get('/me', authMiddleware, getAuthUserInfo); // Get authorized user info
-app.post('/users/aboutme', authMiddleware, setAboutMe); // Set about me
-app.post('/users/status', authMiddleware, setStatus); // Set status
 app.delete('/notifications/:notificationId', authMiddleware, deleteNotification); // Delete notification
 
 exports.api = functions.region('europe-west1').https.onRequest(app);
