@@ -1,6 +1,12 @@
 const admin = require('firebase-admin');
 const db = admin.firestore();
 
+// Upload image imports
+const Busboy = require('busboy');
+const path = require('path');
+const os = require('os');
+const fs = require('fs');
+
 exports.getAllPosts = async (req, res) => {
     const posts = [];
     try {
@@ -78,6 +84,53 @@ exports.postComment = async (req, res) => {
     } catch (error) {
         return res.status(500).json(error);
     }
+};
+
+exports.addPostImage = async (req, res) => {
+    const busboy = new Busboy({ headers: req.headers });
+
+    let imageFileName;
+    let imageToBeUploaded = {};
+
+    const postSnapshot = await db.doc(`/posts/${req.params.postId}`).get();
+    if (!postSnapshot.exists) {
+        return res.status(404).json('Post not found');
+    }
+
+    if (postSnapshot.data().username !== req.userData.username) {
+        return res.status(400).json('Wrong credentials');
+    }
+    busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+        if (mimetype !== 'image/jpeg' && mimetype !== 'image/png') {
+            return res.status(400).json({ error: 'Wrong file type submitted' });
+        }
+        const imageExtension = filename.split('.')[filename.split('.').length - 1];
+        imageFileName = `${Math.round(Math.random() * 10000000000)}.${imageExtension}`;
+        const filepath = path.join(os.tmpdir(), imageFileName)
+        imageToBeUploaded = { filepath, mimetype };
+        file.pipe(fs.createWriteStream(filepath));
+    });
+    busboy.on('finish', async () => {
+        try {
+            await admin.storage().bucket().upload(imageToBeUploaded.filepath, {
+                resumable: false,
+                metadata: {
+                    metadata: {
+                        contentType: imageToBeUploaded.mimetype
+                    }
+                }
+            })
+
+            const postImageUrl = `https://firebasestorage.googleapis.com/v0/b/socialapp2-f9053.appspot.com/o/${imageFileName}?alt=media`;
+            await db.doc(`/posts/${req.params.postId}`).update({ postImageUrl });
+
+            return res.json('Image upload successfully');
+        } catch (error) {
+            console.log('error');
+            return res.status(500).json(error);
+        }
+    })
+    busboy.end(req.rawBody);
 };
 
 exports.deletePost = async (req, res) => {
