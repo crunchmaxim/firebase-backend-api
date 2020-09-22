@@ -1,6 +1,6 @@
 Онлайн версию блога можно посмотреть тут: https://socialapp2-f9053.firebaseapp.com/
 
-Информацию о frontend части можно найти в репозитории: https://github.com/crunchmaxim/socialapp2-frontend
+Информацию о frontend части можно найти в репозитории: https://github.com/crunchmaxim/react-redux-blog
 
 Backend часть блога реализована на Firebase от Google. (https://firebase.google.com/)
 
